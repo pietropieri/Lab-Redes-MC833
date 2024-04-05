@@ -1,11 +1,12 @@
 /*  Alunos: Pietro Pieri - 257337
-           Francisco Guimarães - 
+            Francisco Guimarães - 234589
     Disciplina: Lab de redes- MC833
     Projeto 1:
     Desenvolve programas com uso de socket para
     comunicação cliente servidor
     
     SERVIDOR:*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,96 +31,66 @@ typedef struct {
     int ano_lancamento;
 } Musica;
 
-// Definição da estrutura de nó da lista ligada
-typedef struct Node {
-    Musica musica;
-    struct Node *next;
-} Node;
+// Definição da estrutura de da lista de musicas
+typedef struct HashMusicas {
+    char* key;
+    Musica* musicas;
+} HashMusicas;
 
-Node *head = NULL; // Cabeça da lista ligada
+typedef struct HashMap {
+    HashMusicas** item;
+    int size;
+    int count;
+} HashMap;
 
 // Função para inserir uma música na lista ligada
-void insertMusica(Musica musica) {
-    Node *newNode = (Node*)malloc(sizeof(Node));
-    newNode->musica = musica;
-    newNode->next = head;
-    head = newNode;
-}
+void createMusica(int clientSocket) {
+    Musica newMusica;
+    char tempBuffer[200];  // Temp buffer for receiving data
 
-void printMusica(int clientSocket, Musica musica) {
-    sprintf(buffer, "Identificador Único: %d\n", musica.id);
-    send(clientSocket, buffer, strlen(buffer), 0);
+    // Ask for and receive each field of Musica
+    char *fields[] = {"ID", "Titulo", "Interprete", "Idioma", "Tipo", "Refrao", "Ano de Lancamento"};
+    for (int i = 0; i < 7; i++) {
+        strcpy(buffer, "Por favor, insira ");
+        strcat(buffer, fields[i]);
+        strcat(buffer, ": ");
+        send(clientSocket, buffer, strlen(buffer), 0);
+        
+        memset(tempBuffer, 0, sizeof(tempBuffer));  // Clear temp buffer
+        recv(clientSocket, tempBuffer, sizeof(tempBuffer), 0);
+        
+        // Convert and store the data in the newMusica struct
+        switch (i) {
+            case 0: newMusica.id = atoi(tempBuffer); break;
+            case 1: strcpy(newMusica.titulo, tempBuffer); break;
+            case 2: strcpy(newMusica.interprete, tempBuffer); break;
+            case 3: strcpy(newMusica.idioma, tempBuffer); break;
+            case 4: strcpy(newMusica.tipo, tempBuffer); break;
+            case 5: strcpy(newMusica.refrao, tempBuffer); break;
+            case 6: newMusica.ano_lancamento = atoi(tempBuffer); break;
+        }
+    }
 
-    sprintf(buffer, "Título: %s\n", musica.titulo);
-    send(clientSocket, buffer, strlen(buffer), 0);
+    // Print each parameter of the new Musica
+    printf("Nova Musica Criada:\n");
+    printf("ID: %d\n", newMusica.id);
+    printf("Titulo: %s\n", newMusica.titulo);
+    printf("Interprete: %s\n", newMusica.interprete);
+    printf("Idioma: %s\n", newMusica.idioma);
+    printf("Tipo: %s\n", newMusica.tipo);
+    printf("Refrao: %s\n", newMusica.refrao);
+    printf("Ano de Lancamento: %d\n", newMusica.ano_lancamento);
 
-    sprintf(buffer, "Intérprete: %s\n", musica.interprete);
-    send(clientSocket, buffer, strlen(buffer), 0);
-
-    sprintf(buffer, "Idioma: %s\n", musica.idioma);
-    send(clientSocket, buffer, strlen(buffer), 0);
-
-    sprintf(buffer, "Tipo de música: %s\n", musica.tipo);
-    send(clientSocket, buffer, strlen(buffer), 0);
-
-    sprintf(buffer, "Refrão: %s\n", strlen(musica.refrao) > 0 ? musica.refrao : "Não possui");
-    send(clientSocket, buffer, strlen(buffer), 0);
-
-    sprintf(buffer, "Ano de lançamento: %d\n", musica.ano_lancamento);
+    // Insert the new Musica into the HashMap
+    // You need to implement this part according to your HashMap structure and insertion logic
+    // insertMusica(newMusica);
+    
+    strcpy(buffer, "Musica inserida com sucesso!");
     send(clientSocket, buffer, strlen(buffer), 0);
 }
 
 void solicitarInfoMusica(int clientSocket) {
-    Musica newMusica;
-
-    // Solicita as informações da música ao cliente
-    strcpy(buffer, "Digite o ID da música: ");
-    send(clientSocket, buffer, strlen(buffer), 0);
-    recv(clientSocket, buffer, 1024, 0);
-    newMusica.id = atoi(buffer);
-    memset(buffer, 0, sizeof(buffer));
-
-    strcpy(buffer, "Digite o título da música: ");
-    send(clientSocket, buffer, strlen(buffer), 0);
-    recv(clientSocket, buffer, 1024, 0);
-    strcpy(newMusica.titulo, buffer);
-    memset(buffer, 0, sizeof(buffer));
-
-    strcpy(buffer, "Digite o intérprete/banda da música: ");
-    send(clientSocket, buffer, strlen(buffer), 0);
-    recv(clientSocket, buffer, 1024, 0);
-    strcpy(newMusica.interprete, buffer);
-    memset(buffer, 0, sizeof(buffer));
-
-    strcpy(buffer, "Digite o idioma da música: ");
-    send(clientSocket, buffer, strlen(buffer), 0);
-    recv(clientSocket, buffer, 1024, 0);
-    strcpy(newMusica.idioma, buffer);
-    memset(buffer, 0, sizeof(buffer));
-
-    strcpy(buffer, "Digite o tipo de música (pop, rock, MPB, ...): ");
-    send(clientSocket, buffer, strlen(buffer), 0);
-    recv(clientSocket, buffer, 1024, 0);
-    strcpy(newMusica.tipo, buffer);
-    memset(buffer, 0, sizeof(buffer));
-
-    strcpy(buffer, "Digite o refrão da música: ");
-    send(clientSocket, buffer, strlen(buffer), 0);
-    recv(clientSocket, buffer, 1024, 0);
-    strcpy(newMusica.refrao, buffer);
-
-
-    strcpy(buffer, "Digite o ano de lançamento da música: ");
-    send(clientSocket, buffer, strlen(buffer), 0);
-    recv(clientSocket, buffer, 1024, 0);
-    newMusica.ano_lancamento = atoi(buffer);
-    memset(buffer, 0, sizeof(buffer));
-
-    // Insere a nova música na lista ligada
-    insertMusica(newMusica);
-    printMusica(clientSocket, newMusica);
-    strcpy(buffer, "Musica cadastrada com sucesso!");
-    send(clientSocket, buffer, strlen(buffer), 0);
+    //ToDo
 }
 
 
@@ -128,7 +99,8 @@ int main() {
     struct sockaddr_in serverAddr;
     struct sockaddr_in newAddr;
     socklen_t addr_size;
-    
+
+    char tempBuffer[200];
 
     serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (serverSocket < 0) {
@@ -150,7 +122,7 @@ int main() {
     printf("[+]Bind to port %d\n", PORT);
 
     if (listen(serverSocket, 10) == 0) {
-        printf("[+]Listening....\n");
+        printf("[+]ListeningBBBBB....\n");
     } else {
         printf("[-]Error in listening.\n");
     }
@@ -163,16 +135,22 @@ int main() {
     }
     printf("[+]Connection accepted from %s:%d\n", inet_ntoa(newAddr.sin_addr), ntohs(newAddr.sin_port));
 
+    
+    strcpy(buffer, "Digite 1 para inserir uma música, 2 para listar as músicas: ");
+    send(clientSocket, buffer, strlen(buffer), 0);
+    memset(buffer, 0, sizeof(buffer));
+
     while (1) {
-        strcpy(buffer, "Digite 1 para inserir uma música, 2 para listar as músicas: ");
-        send(clientSocket, buffer, strlen(buffer), 0);
+        // Clear the buffer at the beginning of each iteration
         memset(buffer, 0, sizeof(buffer));
 
         recv(clientSocket, buffer, 1024, 0);
         printf("Mensagem recebida do cliente: %s\n", buffer);
 
+        // Process the command
         if (strcmp(buffer, "1") == 0) {
-           solicitarInfoMusica(clientSocket);
+        memset(buffer, 0, sizeof(buffer));
+        createMusica(clientSocket);
         } else if (strcmp(buffer, "2") == 0) {
             // Lógica para listar as músicas (não implementada neste exemplo)
             strcpy(buffer, "Listagem de músicas:");
@@ -182,6 +160,7 @@ int main() {
             send(clientSocket, buffer, strlen(buffer), 0);
         }
     }
+
 
     return 0;
 }
