@@ -100,8 +100,6 @@ int main() {
     struct sockaddr_in newAddr;
     socklen_t addr_size;
 
-    char tempBuffer[200];
-
     serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (serverSocket < 0) {
         printf("[-]Error in connection.\n");
@@ -136,8 +134,8 @@ int main() {
     printf("[+]Connection accepted from %s:%d\n", inet_ntoa(newAddr.sin_addr), ntohs(newAddr.sin_port));
 
     
-    strcpy(buffer, "Digite 1 para inserir uma música, 2 para listar as músicas: ");
-    send(clientSocket, buffer, strlen(buffer), 0);
+    // strcpy(buffer, "Digite 1 para inserir uma música, 2 para listar as músicas: ");
+    // send(clientSocket, buffer, strlen(buffer), 0);
     memset(buffer, 0, sizeof(buffer));
 
     while (1) {
@@ -146,11 +144,15 @@ int main() {
 
         recv(clientSocket, buffer, 1024, 0);
         printf("Mensagem recebida do cliente: %s\n", buffer);
+        sleep(1);
 
         // Process the command
         if (strcmp(buffer, "1") == 0) {
-        memset(buffer, 0, sizeof(buffer));
-        createMusica(clientSocket);
+            memset(buffer, 0, sizeof(buffer));
+            strcpy(buffer, "===== CRIANDO MUSICA =====:");
+            send(clientSocket, buffer, strlen(buffer), 0);
+            memset(buffer, 0, sizeof(buffer));
+            createMusica(clientSocket);
         } else if (strcmp(buffer, "2") == 0) {
             // Lógica para listar as músicas (não implementada neste exemplo)
             strcpy(buffer, "Listagem de músicas:");

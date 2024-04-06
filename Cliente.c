@@ -44,10 +44,13 @@ int main(){
 	}
 	printf("[+]Connected to Server.\n");
 
+	printf("Digite 1 para inserir uma música, 2 para listar as músicas: \n");
+
 	while(1){
-		printf("Client: \t");
+		printf("Client:");
 		scanf("%s", &buffer[0]);
 		send(clientSocket, buffer, strlen(buffer), 0);
+		memset(buffer, 0, sizeof(buffer));
 
 		if(strcmp(buffer, ":exit") == 0){
 			close(clientSocket);
