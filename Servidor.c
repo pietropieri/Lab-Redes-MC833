@@ -102,6 +102,7 @@ void deleteMusica(HashMap* hashMap, int musicaID) {
             free(current->key);
             free(current);
             printf("Musica with ID %d deleted successfully.\n", musicaID);
+            printf("test?\n");
             return;
         }
         prev = current;
@@ -262,9 +263,6 @@ int main() {
             printf("%d", musicaID);
             deleteMusica(hashMap, musicaID);
             printf("AAAAAAAAAAAAAA");
-            memset(buffer, 0, sizeof(buffer));
-            strcpy(buffer, "Delecao (se encontrada) realizada.\n");
-            memset(buffer, 0, sizeof(buffer));
         } else {
             strcpy(buffer, "Comando inválido!");
             send(clientSocket, buffer, strlen(buffer), 0);
