@@ -81,36 +81,6 @@ void insertMusica(HashMap* hashMap, Musica newMusica) {
     hashMap->count++;
 }
 
-void deleteMusica(HashMap* hashMap, int musicaID) {
-    int index = hashFunction(musicaID, hashMap->size);
-    HashMusica* current = hashMap->item[index];
-    HashMusica* prev = NULL;
-
-    while (current != NULL) {
-        // Check if this is the Musica to delete
-        if (atoi(current->key) == musicaID) {
-            if (prev == NULL) {
-                // The Musica to delete is the first in the list
-                hashMap->item[index] = current->next;
-            } else {
-                // The Musica to delete is not the first in the list
-                prev->next = current->next;
-            }
-
-            // Free the allocated memory for this Musica entry
-            free(current->musica);
-            free(current->key);
-            free(current);
-            printf("Musica with ID %d deleted successfully.\n", musicaID);
-            printf("test?\n");
-            return;
-        }
-        prev = current;
-        current = current->next;
-    }
-
-    printf("Musica with ID %d not found.\n", musicaID);
-}
 
 // Função para inserir uma música na lista ligada
 void createMusica(int clientSocket, HashMap* hashMap) {
@@ -185,6 +155,48 @@ void printHashMap(HashMap* hashMap) {
 }
 
 
+void deleteMusica(HashMap* hashMap, int musicaID) {
+    // Calcula o índice na tabela hash para o ID da música
+    int index = hashFunction(musicaID, hashMap->size);
+    
+    // Verifica se existe uma entrada no índice calculado
+    if (hashMap->item[index] == NULL) {
+        printf("Música não encontrada.\n");
+        return;
+    }
+    
+    // Caso haja uma ou mais entradas no índice calculado, percorre-se a lista ligada
+    // para encontrar a entrada correspondente ao ID da música
+    HashMusica* current = hashMap->item[index];
+    HashMusica* prev = NULL;
+    while (current != NULL) {
+        // Se o ID da música for encontrado na entrada atual
+        if (atoi(current->key) == musicaID) {
+            // Remove a entrada
+            if (prev == NULL) {
+                // Se a entrada a ser removida for a primeira na lista ligada
+                hashMap->item[index] = current->next;
+            } else {
+                // Se a entrada a ser removida estiver no meio ou no final da lista ligada
+                prev->next = current->next;
+            }
+            // Libera a memória alocada para a entrada
+            free(current->key);
+            free(current->musica);
+            free(current);
+            printHashMap(hashMap);
+            printf("Música com ID %d deletada com sucesso.\n", musicaID);
+            return;
+        }
+        prev = current;
+        current = current->next;
+    }
+    
+    // Se o ID da música não for encontrado na lista ligada correspondente ao índice
+    printf("Música com ID %d não encontrada.\n", musicaID);
+}
+
+
 int main() {
     int serverSocket, clientSocket, ret;
     struct sockaddr_in serverAddr;
@@ -248,12 +260,12 @@ int main() {
             memset(buffer, 0, sizeof(buffer));
             createMusica(clientSocket, hashMap);
         } else if (strcmp(buffer, "2") == 0) {
-            // Lógica para listar as músicas (não implementada neste exemplo)
+            // Lógica para listar as músicas
             strcpy(buffer, "Listagem de músicas:");
             send(clientSocket, buffer, strlen(buffer), 0);
             printHashMap(hashMap);
         } else if (strcmp(buffer, "3") == 0) {
-            // Lógica para listar as músicas (não implementada neste exemplo)
+            // Lógica para listar as músicas
             memset(buffer, 0, sizeof(buffer));
             strcpy(buffer, "===== DELETANDO MUSICA, DIGITE O ID: =====:\n");
             send(clientSocket, buffer, strlen(buffer), 0);
@@ -262,7 +274,7 @@ int main() {
             int musicaID = atoi(buffer);
             printf("%d", musicaID);
             deleteMusica(hashMap, musicaID);
-            printf("AAAAAAAAAAAAAA");
+            send(clientSocket, buffer, strlen(buffer), 0);
         } else {
             strcpy(buffer, "Comando inválido!");
             send(clientSocket, buffer, strlen(buffer), 0);

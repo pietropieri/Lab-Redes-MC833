@@ -44,7 +44,7 @@ int main(){
 	}
 	printf("[+]Connected to Server.\n");
 
-	printf("Digite 1 para inserir uma música, 2 para listar as músicas: \n");
+	printf("Digite 1 para inserir uma música, 2 para listar as músicas, 3 para remover uma música: \n");
 
 	while(1){
 		printf("Client:");
