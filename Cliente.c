@@ -1,5 +1,5 @@
 /*  Alunos: Pietro Pieri - 257337
-           Francisco Guimarães - 
+            Francisco Guimarães - 
     Disciplina: Lab de redes- MC833
     Projeto 1:
     Desenvolve programas com uso de socket para
@@ -44,10 +44,13 @@ int main(){
 	}
 	printf("[+]Connected to Server.\n");
 
+	printf("Digite 1 para inserir uma música, 2 para listar as músicas, 3 para remover uma música: \n");
+
 	while(1){
-		printf("Client: \t");
+		printf("Client:");
 		scanf("%s", &buffer[0]);
 		send(clientSocket, buffer, strlen(buffer), 0);
+		memset(buffer, 0, sizeof(buffer));
 
 		if(strcmp(buffer, ":exit") == 0){
 			close(clientSocket);
