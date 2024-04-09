@@ -138,6 +138,10 @@ void createMusica(int clientSocket, HashMap* hashMap) {
         memset(tempBuffer, 0, sizeof(tempBuffer));  // Clear temp buffer
         recv(clientSocket, tempBuffer, sizeof(tempBuffer), 0);
         
+        if (i == 5 && strlen(tempBuffer) == 0) {
+            strcpy(tempBuffer, "Não tem refrão");
+        }
+
         // Convert and store the data in the newMusica struct
         switch (i) {
             case 0: newMusica.id = atoi(tempBuffer); break;
