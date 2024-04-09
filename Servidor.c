@@ -56,6 +56,36 @@ int hashFunction(int key, int size) {
     return key % size;
 }
 
+void saveHashMapToJson(HashMap* hashMap, const char* filename) {
+    FILE* fp = fopen(filename, "w");
+    if (fp == NULL) {
+        perror("Erro ao abrir arquivo");
+        return;
+    }
+
+    fprintf(fp, "{\n");
+    for (int i = 0; i < hashMap->size; i++) {
+        HashMusica* entry = hashMap->item[i];
+        while (entry != NULL) {
+            fprintf(fp, "  \"%s\": {\n", entry->key);
+            Musica* musica = entry->musica;
+            fprintf(fp, "    \"id\": %d,\n", musica->id);
+            fprintf(fp, "    \"titulo\": \"%s\",\n", musica->titulo);
+            fprintf(fp, "    \"interprete\": \"%s\",\n", musica->interprete);
+            fprintf(fp, "    \"idioma\": \"%s\",\n", musica->idioma);
+            fprintf(fp, "    \"tipo\": \"%s\",\n", musica->tipo);
+            fprintf(fp, "    \"refrao\": \"%s\",\n", musica->refrao);
+            fprintf(fp, "    \"ano_lancamento\": \"%s\"\n", musica->ano_lancamento);
+            fprintf(fp, "  },%s\n", entry->next != NULL ? "," : "");
+            entry = entry->next;
+        }
+    }
+    fprintf(fp, "}\n");
+
+    fclose(fp);
+}
+
+
 void insertMusica(HashMap* hashMap, Musica newMusica) {
     printf("NEW MUSICA");
     int index = hashFunction(newMusica.id, hashMap->size);
@@ -79,6 +109,8 @@ void insertMusica(HashMap* hashMap, Musica newMusica) {
         current->next = newEntry;
     }
     hashMap->count++;
+    
+    saveHashMapToJson(hashMap, "musicas.json");
 }
 
 
@@ -195,7 +227,6 @@ void deleteMusica(HashMap* hashMap, int musicaID) {
     // Se o ID da música não for encontrado na lista ligada correspondente ao índice
     printf("Música com ID %d não encontrada.\n", musicaID);
 }
-
 
 int main() {
     int serverSocket, clientSocket, ret;
