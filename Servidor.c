@@ -248,15 +248,11 @@ void listarMusicasPorAno(int clientSocket, HashMap* hashMap) {
     sendMessage(clientSocket, message);
 }
 
-void listarMusicasPorIdiomaEAno(int clientSocket, HashMap* hashMap) {
-    char tempBuffer[200];
-
-    memset(tempBuffer, 0, sizeof(tempBuffer)); 
-    recv(clientSocket, tempBuffer, sizeof(tempBuffer), 0);
-    printf("%s", tempBuffer);
-
-    char message[4096] = "Músicas lançadas em ";
-    strcat(message, tempBuffer);
+void listarMusicasPorIdiomaEAno(int clientSocket, HashMap* hashMap, char* idioma, char* ano) {
+    char message[4096] = "Músicas em ";
+    strcat(message, idioma);
+    strcat(message, " lançadas em ");
+    strcat(message, ano);
     strcat(message, ":\n");
 
     int found = 0;
@@ -264,7 +260,7 @@ void listarMusicasPorIdiomaEAno(int clientSocket, HashMap* hashMap) {
     for (int i = 0; i < hashMap->size; i++) {
         HashMusica* entry = hashMap->item[i];
         while (entry != NULL) {
-            if (strcmp(entry->musica->ano_lancamento, tempBuffer) == 0) {
+            if (strcmp(entry->musica->idioma, idioma) == 0 && strcmp(entry->musica->ano_lancamento, ano) == 0) {
                 char musicaInfo[256];
                 Musica* musica = entry->musica;
                 snprintf(musicaInfo, sizeof(musicaInfo),
@@ -284,6 +280,82 @@ void listarMusicasPorIdiomaEAno(int clientSocket, HashMap* hashMap) {
 
     sendMessage(clientSocket, message);
 }
+
+void listarMusicasPorTipo(int clientSocket, HashMap* hashMap) {
+    char tempBuffer[200];
+
+    memset(tempBuffer, 0, sizeof(tempBuffer)); 
+    recv(clientSocket, tempBuffer, sizeof(tempBuffer), 0);
+    printf("%s", tempBuffer);
+
+    char message[4096] = "Músicas lançadas do tipo ";
+    strcat(message, tempBuffer);
+    strcat(message, ":\n");
+
+    int found = 0;
+
+    for (int i = 0; i < hashMap->size; i++) {
+        HashMusica* entry = hashMap->item[i];
+        while (entry != NULL) {
+            if (strcmp(entry->musica->tipo, tempBuffer) == 0) {
+                char musicaInfo[256];
+                Musica* musica = entry->musica;
+                snprintf(musicaInfo, sizeof(musicaInfo),
+                     "ID: %d\n\tTitulo: %s\n\tInterprete: %s\n\tIdioma: %s\n\tTipo: %s\n\tRefrao: %s\n\tAno de Lancamento: %s\n\n",
+                     musica->id, musica->titulo, musica->interprete, musica->idioma, musica->tipo, musica->refrao, musica->ano_lancamento);
+
+                strcat(message, musicaInfo);
+                found = 1;
+            }
+            entry = entry->next;
+        }
+    }
+
+    if (!found) {
+        strcat(message, "Nenhuma música encontrada.");
+    }
+
+    sendMessage(clientSocket, message);
+}
+
+void listarInformacoesMusicaPorID(int clientSocket, HashMap* hashMap) {
+    char idBuffer[200];  // Buffer para receber o ID como string
+
+    // Solicita e recebe o ID do usuário
+    sendMessage(clientSocket, "Digite o ID da música:");
+    memset(idBuffer, 0, sizeof(idBuffer));
+    recv(clientSocket, idBuffer, sizeof(idBuffer), 0);
+
+    // Converte o ID de string para inteiro
+    int id = atoi(idBuffer);
+
+    char message[1024];
+    snprintf(message, sizeof(message), "Informações da música ID %d:\n", id);
+
+    int index = hashFunction(id, hashMap->size);
+    HashMusica* entry = hashMap->item[index];
+
+    int found = 0;
+
+    while (entry != NULL) {
+        if (entry->musica->id == id) {
+            char musicaInfo[512];
+            snprintf(musicaInfo, sizeof(musicaInfo), "\tTítulo: %s\n\tIntérprete: %s\n\tIdioma: %s\n\tTipo: %s\n\tRefrão: %s\n\tAno de Lançamento: %s\n",
+                     entry->musica->titulo, entry->musica->interprete, entry->musica->idioma, entry->musica->tipo, entry->musica->refrao, entry->musica->ano_lancamento);
+            strcat(message, musicaInfo);
+            found = 1;
+            break;  // Encerra o loop assim que encontrar a música
+        }
+        entry = entry->next;
+    }
+
+    if (!found) {
+        strcat(message, "Música não encontrada.");
+    }
+
+    sendMessage(clientSocket, message);
+}
+
 
 void signal_handler(int sig) {
     printf("\nShutting down server...\n");
@@ -416,16 +488,24 @@ int main() {
             sendMessage(clientSocket, "Digite o ano:");
             memset(buffer, 0, sizeof(buffer));
             listarMusicasPorAno(clientSocket, hashMap);
-        // } else if (strcmp(command, "5") == 0) {  // Listar músicas por idioma e ano
-        //     sendMessage(clientSocket, "Digite o idioma:");
-        //     memset(buffer, 0, sizeof(buffer));
-        //     listarMusicasPorIdiomaEAno(clientSocket, hashMap);
-        // } else if (strcmp(command, "6") == 0) {  // Listar músicas por tipo
-        //     memset(buffer, 0, sizeof(buffer));
-        //     listarMusicasPorTipo(clientSocket, hashMap, arg1);
-        // } else if (strcmp(command, "7") == 0) {  
-        //     memset(buffer, 0, sizeof(buffer));
-        //     listarInformacoesMusicaPorID(clientSocket, hashMap, id);    
+        } else if (strcmp(buffer, "5") == 0) {  // Listar músicas por idioma e ano
+            char idiomaBuffer[200];
+            char anoBuffer[200];
+            sendMessage(clientSocket, "Digite o idioma:");
+            memset(idiomaBuffer, 0, sizeof(idiomaBuffer));
+            recv(clientSocket, idiomaBuffer, sizeof(idiomaBuffer), 0);
+            sendMessage(clientSocket, "Digite o ano:");
+            memset(anoBuffer, 0, sizeof(anoBuffer));
+            recv(clientSocket, anoBuffer, sizeof(anoBuffer), 0);
+            listarMusicasPorIdiomaEAno(clientSocket, hashMap, idiomaBuffer, anoBuffer);
+        } else if (strcmp(buffer, "6") == 0) {  // Listar músicas por tipo
+            sendMessage(clientSocket, "Digite o tipo:");
+            memset(buffer, 0, sizeof(buffer));
+            listarMusicasPorTipo(clientSocket, hashMap);
+        } else if (strcmp(buffer, "7") == 0) {  // Listar músicas por tipo
+            // sendMessage(clientSocket, "Digite o ID:");
+            memset(buffer, 0, sizeof(buffer));
+            listarInformacoesMusicaPorID(clientSocket, hashMap);  
         } else {
             memset(buffer, 0, sizeof(buffer));
             sendMessage(clientSocket, "Comando inválido!");
