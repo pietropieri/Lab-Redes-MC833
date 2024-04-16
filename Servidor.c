@@ -32,37 +32,42 @@ typedef struct {
     char ano_lancamento[100];
 } Musica;
 
-// Definição da estrutura de da lista de musicas
+// Definição da estrutura da lista de musicas
 typedef struct HashMusica {
     char* key;
     Musica* musica;
     struct HashMusica* next;
 } HashMusica;
 
+// Definicao do HashMap usado
 typedef struct HashMap {
     HashMusica** item;
     int size;
     int count;
 } HashMap;
 
+// Inicializacao do HashMap de tamanho maximo "size"
 HashMap* initHashMap(int size) {
     HashMap* hashMap = (HashMap*)malloc(sizeof(HashMap));
     hashMap->size = size;
     hashMap->count = 0;
-    hashMap->item = (HashMusica**)calloc(size, sizeof(HashMusica*));  // Allocate and initialize with NULL
+    hashMap->item = (HashMusica**)calloc(size, sizeof(HashMusica*)); 
     return hashMap;
 }
 
+// Funcao auxiliar para enviar mensagens para os Clientes.
 void sendMessage(int clientSocket, char* message) {
-    char buffer[2048]; // Aumente o tamanho do buffer se necessário
+    char buffer[2048];
     strcpy(buffer, message);
     send(clientSocket, buffer, strlen(buffer), 0);
 }
 
+// Funcao Hash usada para calcular o index do HashMap
 int hashFunction(int key, int size) {
     return key % size;
 }
 
+// Funcao que salva o HashMap (contendo informacoes das musicas) em um arquivo musicas.json
 void saveHashMapToJson(HashMap* hashMap, const char* filename) {
     FILE* fp = fopen(filename, "w");
     if (fp == NULL) {
@@ -94,21 +99,18 @@ void saveHashMapToJson(HashMap* hashMap, const char* filename) {
 
 
 void insertMusica(HashMap* hashMap, Musica newMusica, int fromJson) {
-    printf("NEW MUSICA");
     int index = hashFunction(newMusica.id, hashMap->size);
 
     HashMusica* newEntry = (HashMusica*)malloc(sizeof(HashMusica));
-    newEntry->key = (char*)malloc(20);  // Assuming an int can be converted to a string of max length 20
+    newEntry->key = (char*)malloc(20);
     sprintf(newEntry->key, "%d", newMusica.id);
     newEntry->musica = (Musica*)malloc(sizeof(Musica));
     memcpy(newEntry->musica, &newMusica, sizeof(Musica));
     newEntry->next = NULL;
 
-    // Handle collision
     if (hashMap->item[index] == NULL) {
         hashMap->item[index] = newEntry;
     } else {
-        // Append to the end of the list at this index
         HashMusica* current = hashMap->item[index];
         while (current->next != NULL) {
             current = current->next;
@@ -127,9 +129,8 @@ void insertMusica(HashMap* hashMap, Musica newMusica, int fromJson) {
 // Função para inserir uma música na lista ligada
 void createMusica(int clientSocket, HashMap* hashMap) {
     Musica newMusica;
-    char tempBuffer[200];  // Temp buffer for receiving data
+    char tempBuffer[200];
 
-    // Ask for and receive each field of Musica
     char *fields[] = {"ID", "Titulo", "Interprete", "Idioma", "Tipo", "Refrao", "Ano de Lancamento"};
     for (int i = 0; i < 7; i++) {
         memset(buffer, 0, sizeof(buffer));
@@ -138,14 +139,14 @@ void createMusica(int clientSocket, HashMap* hashMap) {
         strcat(buffer, ": ");
         sendMessage(clientSocket, buffer);
         
-        memset(tempBuffer, 0, sizeof(tempBuffer));  // Clear temp buffer
+        memset(tempBuffer, 0, sizeof(tempBuffer)); 
         recv(clientSocket, tempBuffer, sizeof(tempBuffer), 0);
         
+        // Caso o cliente nao informe o refrao, este campo sera substituido por "Não tem refrão"
         if (i == 5 && strlen(tempBuffer) == 0) {
             strcpy(tempBuffer, "Não tem refrão");
         }
 
-        // Convert and store the data in the newMusica struct
         switch (i) {
             case 0: newMusica.id = atoi(tempBuffer); break;
             case 1: strcpy(newMusica.titulo, tempBuffer); break;
@@ -156,41 +157,22 @@ void createMusica(int clientSocket, HashMap* hashMap) {
             case 6: strcpy(newMusica.ano_lancamento, tempBuffer); break;
         }
     }
-
-    // Print each parameter of the new Musica
-    printf("Nova Musica Criada:\n");
-    printf("ID: %d\n", newMusica.id);
-    printf("Titulo: %s\n", newMusica.titulo);
-    printf("Interprete: %s\n", newMusica.interprete);
-    printf("Idioma: %s\n", newMusica.idioma);
-    printf("Tipo: %s\n", newMusica.tipo);
-    printf("Refrao: %s\n", newMusica.refrao);
-    printf("Ano de Lancamento: %s\n", newMusica.ano_lancamento);
-
-    // Insert the new Musica into the HashMap
-    // You need to implement this part according to your HashMap structure and insertion logic
-    // insertMusica(newMusica);
     
     insertMusica(hashMap, newMusica, 0);
 
-    // strcpy(buffer, "Musica inserida com sucesso!");
     memset(buffer, 0, sizeof(buffer));
     sendMessage(clientSocket, "Musica inserida com sucesso!");
 }
 
-void solicitarInfoMusica(int clientSocket) {
-    //ToDo
-}
-
+// Funcao que envia para o cliente as informacoes de todas as musicas
 void printHashMap(int clientSocket, HashMap* hashMap) {
     char message[4096] = "";
 
 
     if (hashMap->count == 0) {
-        // char* message = "Nenhuma musica registrada";
         memset(buffer, 0, sizeof(buffer));
         sendMessage(clientSocket, "Listagem de músicas: Nenhuma musica registrada");
-        return; // Early return if no music is registered
+        return; 
     }   
     
     strcat(message, "Listagem de músicas:\n");
@@ -218,6 +200,7 @@ void printHashMap(int clientSocket, HashMap* hashMap) {
     printf("----------------------------\n");
 }
 
+// Funcao que lista as musicas dado um Ano de Lancamento
 void listarMusicasPorAno(int clientSocket, HashMap* hashMap) {
     char tempBuffer[200];
 
@@ -255,6 +238,7 @@ void listarMusicasPorAno(int clientSocket, HashMap* hashMap) {
     sendMessage(clientSocket, message);
 }
 
+// Funcao que lista as musicas dado um Idioma e Ano de Lancamento
 void listarMusicasPorIdiomaEAno(int clientSocket, HashMap* hashMap, char* idioma, char* ano) {
     char message[4096] = "Músicas em ";
     strcat(message, idioma);
@@ -288,6 +272,7 @@ void listarMusicasPorIdiomaEAno(int clientSocket, HashMap* hashMap, char* idioma
     sendMessage(clientSocket, message);
 }
 
+// Funcao que lista as musicas dado um Tipo
 void listarMusicasPorTipo(int clientSocket, HashMap* hashMap) {
     char tempBuffer[200];
 
@@ -325,15 +310,14 @@ void listarMusicasPorTipo(int clientSocket, HashMap* hashMap) {
     sendMessage(clientSocket, message);
 }
 
+// Funcao que lista as musicas dado um ID
 void listarInformacoesMusicaPorID(int clientSocket, HashMap* hashMap) {
-    char idBuffer[200];  // Buffer para receber o ID como string
+    char idBuffer[200];
 
-    // Solicita e recebe o ID do usuário
     sendMessage(clientSocket, "Digite o ID da música:");
     memset(idBuffer, 0, sizeof(idBuffer));
     recv(clientSocket, idBuffer, sizeof(idBuffer), 0);
 
-    // Converte o ID de string para inteiro
     int id = atoi(idBuffer);
 
     char message[1024];
@@ -351,7 +335,7 @@ void listarInformacoesMusicaPorID(int clientSocket, HashMap* hashMap) {
                      entry->musica->titulo, entry->musica->interprete, entry->musica->idioma, entry->musica->tipo, entry->musica->refrao, entry->musica->ano_lancamento);
             strcat(message, musicaInfo);
             found = 1;
-            break;  // Encerra o loop assim que encontrar a música
+            break; 
         }
         entry = entry->next;
     }
@@ -363,38 +347,31 @@ void listarInformacoesMusicaPorID(int clientSocket, HashMap* hashMap) {
     sendMessage(clientSocket, message);
 }
 
-
+// Funcao auxiliar para desligar o servidor com segurança
 void signal_handler(int sig) {
-    printf("\nShutting down server...\n");
-    exit(0); // Exit program
+    printf("\nDesligando Servidor...\n");
+    exit(0);
 }
 
+
+// Funcao que deleta uma musica dado seu ID
 void deleteMusica(HashMap* hashMap, int musicaID, int clientSocket) {
-    // Calcula o índice na tabela hash para o ID da música
     int index = hashFunction(musicaID, hashMap->size);
     
-    // Verifica se existe uma entrada no índice calculado
     if (hashMap->item[index] == NULL) {
         printf("Música não encontrada.\n");
         return;
     }
     
-    // Caso haja uma ou mais entradas no índice calculado, percorre-se a lista ligada
-    // para encontrar a entrada correspondente ao ID da música
     HashMusica* current = hashMap->item[index];
     HashMusica* prev = NULL;
     while (current != NULL) {
-        // Se o ID da música for encontrado na entrada atual
         if (atoi(current->key) == musicaID) {
-            // Remove a entrada
             if (prev == NULL) {
-                // Se a entrada a ser removida for a primeira na lista ligada
                 hashMap->item[index] = current->next;
             } else {
-                // Se a entrada a ser removida estiver no meio ou no final da lista ligada
                 prev->next = current->next;
             }
-            // Libera a memória alocada para a entrada
             free(current->key);
             free(current->musica);
             free(current);
@@ -406,10 +383,10 @@ void deleteMusica(HashMap* hashMap, int musicaID, int clientSocket) {
         current = current->next;
     }
     
-    // Se o ID da música não for encontrado na lista ligada correspondente ao índice
     printf("Música com ID %d não encontrada.\n", musicaID);
 }
 
+// Funcao que carrega as musicas do arquivo musicas.json para o HashMap, assim realizando a leitura do arquivo
 void loadHashMapFromJson(HashMap* hashMap, const char* filename) {
     FILE* fp = fopen(filename, "r");
     if (fp == NULL) {
@@ -417,40 +394,32 @@ void loadHashMapFromJson(HashMap* hashMap, const char* filename) {
         return;
     }
 
-    char line[512];  // Buffer para armazenar cada linha do arquivo
+    char line[512];  
     while (fgets(line, sizeof(line), fp) != NULL) {
-        // Ignorar linhas que não contêm dados relevantes
         if (strstr(line, "\"id\":")) {
             Musica newMusica;
             int id;
             char key[20];
 
-            // Parse ID
             sscanf(strstr(line, "\"id\":") + 5, "%d", &id);
             newMusica.id = id;
             sprintf(key, "%d", id);
 
-            // Parse título
             fgets(line, sizeof(line), fp);
             sscanf(line, " \"titulo\": \"%[^\"]\"", newMusica.titulo);
 
-            // Parse intérprete
             fgets(line, sizeof(line), fp);
             sscanf(line, " \"interprete\": \"%[^\"]\"", newMusica.interprete);
 
-            // Parse idioma
             fgets(line, sizeof(line), fp);
             sscanf(line, " \"idioma\": \"%[^\"]\"", newMusica.idioma);
 
-            // Parse tipo
             fgets(line, sizeof(line), fp);
             sscanf(line, " \"tipo\": \"%[^\"]\"", newMusica.tipo);
 
-            // Parse refrão
             fgets(line, sizeof(line), fp);
             sscanf(line, " \"refrao\": \"%[^\"]\"", newMusica.refrao);
 
-            // Parse ano de lançamento
             fgets(line, sizeof(line), fp);
             sscanf(line, " \"ano_lancamento\": \"%[^\"]\"", newMusica.ano_lancamento);
 
@@ -471,17 +440,17 @@ int main() {
 
     signal(SIGINT, signal_handler);
 
-    // Initialize HashMap
-    HashMap* hashMap = initHashMap(8); // Example size, adjust as needed
+    // Inicializando o HashMap com tamanho maximo de 8 musicas
+    HashMap* hashMap = initHashMap(8);
 
     loadHashMapFromJson(hashMap, "musicas.json");
 
     serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (serverSocket < 0) {
-        printf("[-]Error in connection.\n");
+        printf("[-]Erro na conexao.\n");
         exit(1);
     }
-    printf("[+]Server Socket is created.\n");
+    printf("[+]Socket do Servidor criado.\n");
 
     if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
         perror("setsockopt");
@@ -495,47 +464,44 @@ int main() {
 
     ret = bind(serverSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
     if (ret < 0) {
-        printf("[-]Error in binding.\n");
+        printf("[-]Erro na vinculação da porta.\n");
         exit(1);
     }
-    printf("[+]Bind to port %d\n", PORT);
+    printf("[+]Vinculado à porta %d\n", PORT);
 
     if (listen(serverSocket, 10) == 0) {
-        printf("[+]ListeningBBBBB....\n");
+        printf("[+]Ouvindo porta....\n");
     } else {
-        printf("[-]Error in listening.\n");
+        printf("[-]Erro ao ouvir a porta.\n");
     }
 
+    // Conexao com o Cliente
     addr_size = sizeof(newAddr);
     clientSocket = accept(serverSocket, (struct sockaddr*)&newAddr, &addr_size);
     if (clientSocket < 0) {
-        printf("[-]Error in accepting.\n");
+        printf("[-]Erro ao aceitar.\n");
         exit(1);
     }
-    printf("[+]Connection accepted from %s:%d\n", inet_ntoa(newAddr.sin_addr), ntohs(newAddr.sin_port));
+    printf("[+]Conexao aceita de %s:%d\n", inet_ntoa(newAddr.sin_addr), ntohs(newAddr.sin_port));
 
-    
-    // strcpy(buffer, "Digite 1 para inserir uma música, 2 para listar as músicas: ");
-    // send(clientSocket, buffer, strlen(buffer), 0);
     memset(buffer, 0, sizeof(buffer));
 
+    // While que deixara o servidor rodando e esperando para receber instrucoes
     while (1) {
-        // Clear the buffer at the beginning of each iteration
         memset(buffer, 0, sizeof(buffer));
 
         recv(clientSocket, buffer, 1024, 0);
         printf("Mensagem recebida do cliente: %s\n", buffer);
         sleep(1);
 
-        // Process the command
-        if (strcmp(buffer, "1") == 0) {
+        //Inicio do mapeamento das instrucoes: [1, 2, 3, 4, 5, 6, 7]
+        if (strcmp(buffer, "1") == 0) { // Cria nova musica
             memset(buffer, 0, sizeof(buffer));
             createMusica(clientSocket, hashMap);
-        } else if (strcmp(buffer, "2") == 0) {
+        } else if (strcmp(buffer, "2") == 0) { // Exibe informacoes de musicas registradas
             memset(buffer, 0, sizeof(buffer));
             printHashMap(clientSocket, hashMap);
-        } else if (strcmp(buffer, "3") == 0) {
-            // Lógica para listar as músicas
+        } else if (strcmp(buffer, "3") == 0) { // Deleta musica existente
             memset(buffer, 0, sizeof(buffer));
             strcpy(buffer, "===== DELETANDO MUSICA, DIGITE O ID: =====:\n");
             send(clientSocket, buffer, strlen(buffer), 0);
@@ -545,11 +511,11 @@ int main() {
             printf("%d", musicaID);
             deleteMusica(hashMap, musicaID, clientSocket);
             send(clientSocket, buffer, strlen(buffer), 0);
-        } else if (strcmp(buffer, "4") == 0) {  // Listar músicas por ano
+        } else if (strcmp(buffer, "4") == 0) {  // Lista musicas por ano
             sendMessage(clientSocket, "Digite o ano:");
             memset(buffer, 0, sizeof(buffer));
             listarMusicasPorAno(clientSocket, hashMap);
-        } else if (strcmp(buffer, "5") == 0) {  // Listar músicas por idioma e ano
+        } else if (strcmp(buffer, "5") == 0) {   // Lista musicas por Idioma e Ano
             char idiomaBuffer[200];
             char anoBuffer[200];
             sendMessage(clientSocket, "Digite o idioma:");
@@ -559,12 +525,11 @@ int main() {
             memset(anoBuffer, 0, sizeof(anoBuffer));
             recv(clientSocket, anoBuffer, sizeof(anoBuffer), 0);
             listarMusicasPorIdiomaEAno(clientSocket, hashMap, idiomaBuffer, anoBuffer);
-        } else if (strcmp(buffer, "6") == 0) {  // Listar músicas por tipo
+        } else if (strcmp(buffer, "6") == 0) {  // Lista musicas por Tipo
             sendMessage(clientSocket, "Digite o tipo:");
             memset(buffer, 0, sizeof(buffer));
             listarMusicasPorTipo(clientSocket, hashMap);
-        } else if (strcmp(buffer, "7") == 0) {  // Listar músicas por tipo
-            // sendMessage(clientSocket, "Digite o ID:");
+        } else if (strcmp(buffer, "7") == 0) {  // Lista musicas por ID
             memset(buffer, 0, sizeof(buffer));
             listarInformacoesMusicaPorID(clientSocket, hashMap);  
         } else {
