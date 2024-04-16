@@ -93,7 +93,7 @@ void saveHashMapToJson(HashMap* hashMap, const char* filename) {
 }
 
 
-void insertMusica(HashMap* hashMap, Musica newMusica) {
+void insertMusica(HashMap* hashMap, Musica newMusica, int fromJson) {
     printf("NEW MUSICA");
     int index = hashFunction(newMusica.id, hashMap->size);
 
@@ -117,7 +117,10 @@ void insertMusica(HashMap* hashMap, Musica newMusica) {
     }
     hashMap->count++;
     
-    saveHashMapToJson(hashMap, "musicas.json");
+    if (fromJson == 0) {
+        saveHashMapToJson(hashMap, "musicas.json");
+    }
+    
 }
 
 
@@ -168,7 +171,7 @@ void createMusica(int clientSocket, HashMap* hashMap) {
     // You need to implement this part according to your HashMap structure and insertion logic
     // insertMusica(newMusica);
     
-    insertMusica(hashMap, newMusica);
+    insertMusica(hashMap, newMusica, 0);
 
     // strcpy(buffer, "Musica inserida com sucesso!");
     memset(buffer, 0, sizeof(buffer));
@@ -452,7 +455,7 @@ void loadHashMapFromJson(HashMap* hashMap, const char* filename) {
             sscanf(line, " \"ano_lancamento\": \"%[^\"]\"", newMusica.ano_lancamento);
 
             // Insere a música no HashMap
-            insertMusica(hashMap, newMusica);
+            insertMusica(hashMap, newMusica, 1);
         }
     }
 
@@ -470,6 +473,8 @@ int main() {
 
     // Initialize HashMap
     HashMap* hashMap = initHashMap(8); // Example size, adjust as needed
+
+    loadHashMapFromJson(hashMap, "musicas.json");
 
     serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (serverSocket < 0) {
