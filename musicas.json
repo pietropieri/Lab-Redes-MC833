@@ -1,0 +1,29 @@
+{
+  "43": {
+    "id": 43,
+    "titulo": "O Tannenbaum",
+    "interprete": "Tradicional, melodia por Ernst Anschütz",
+    "idioma": "Alemão",
+    "tipo": "Canção natalina",
+    "refrao": "O Tannenbaum, o Tannenbaum, wie treu sind deine Blätter!",
+    "ano_lancamento": "1824"
+  },
+  "99": {
+    "id": 99,
+    "titulo": "Happy Birthday to You",
+    "interprete": "Mildred e Patty Hill",
+    "idioma": "Inglês",
+    "tipo": "Canção de aniversário",
+    "refrao": "Happy birthday to you, Happy birthday to you, Happy birthday dear [name], Happy birthday to you",
+    "ano_lancamento": "1893"
+  },
+  "14": {
+    "id": 14,
+    "titulo": "The Star-Spangled Banner",
+    "interprete": "Francis Scott Key",
+    "idioma": "Inglês",
+    "tipo": "Hino nacional",
+    "refrao": "O say does that star-spangled banner yet wave, O'er the land of the free and the home of the brave?",
+    "ano_lancamento": "1814"
+  },
+}
