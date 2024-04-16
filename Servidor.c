@@ -407,6 +407,58 @@ void deleteMusica(HashMap* hashMap, int musicaID, int clientSocket) {
     printf("Música com ID %d não encontrada.\n", musicaID);
 }
 
+void loadHashMapFromJson(HashMap* hashMap, const char* filename) {
+    FILE* fp = fopen(filename, "r");
+    if (fp == NULL) {
+        perror("Erro ao abrir arquivo");
+        return;
+    }
+
+    char line[512];  // Buffer para armazenar cada linha do arquivo
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        // Ignorar linhas que não contêm dados relevantes
+        if (strstr(line, "\"id\":")) {
+            Musica newMusica;
+            int id;
+            char key[20];
+
+            // Parse ID
+            sscanf(strstr(line, "\"id\":") + 5, "%d", &id);
+            newMusica.id = id;
+            sprintf(key, "%d", id);
+
+            // Parse título
+            fgets(line, sizeof(line), fp);
+            sscanf(line, " \"titulo\": \"%[^\"]\"", newMusica.titulo);
+
+            // Parse intérprete
+            fgets(line, sizeof(line), fp);
+            sscanf(line, " \"interprete\": \"%[^\"]\"", newMusica.interprete);
+
+            // Parse idioma
+            fgets(line, sizeof(line), fp);
+            sscanf(line, " \"idioma\": \"%[^\"]\"", newMusica.idioma);
+
+            // Parse tipo
+            fgets(line, sizeof(line), fp);
+            sscanf(line, " \"tipo\": \"%[^\"]\"", newMusica.tipo);
+
+            // Parse refrão
+            fgets(line, sizeof(line), fp);
+            sscanf(line, " \"refrao\": \"%[^\"]\"", newMusica.refrao);
+
+            // Parse ano de lançamento
+            fgets(line, sizeof(line), fp);
+            sscanf(line, " \"ano_lancamento\": \"%[^\"]\"", newMusica.ano_lancamento);
+
+            // Insere a música no HashMap
+            insertMusica(hashMap, newMusica);
+        }
+    }
+
+    fclose(fp);
+}
+
 int main() {
     int serverSocket, clientSocket, ret;
     struct sockaddr_in serverAddr;
