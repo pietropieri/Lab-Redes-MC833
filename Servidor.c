@@ -197,7 +197,7 @@ void createMusica(int clientSocket, HashMap* hashMap) {
         
         // Caso o cliente nao informe o refrao, este campo sera substituido por "Não tem refrão"
         if (i == 5 && strlen(tempBuffer) == 0) {
-            strcpy(tempBuffer, "Não tem refrão");
+            strcpy(tempBuffer, "Música sem refrão");
         }
 
         switch (i) {
@@ -452,13 +452,14 @@ void deleteMusica(HashMap* hashMap, int musicaID, int clientSocket) {
 }
 
 void* handle_client(void* arg) {
+    // inicializacao do socket e do buffer
     int clientSocket = *(int*)arg;
     char buffer[1024];
-
-
-
-
+    
+    // Loop responsavel por ler as operacoes
     while (1) {
+
+        // inicializacao do hashMap
         HashMap* hashMap = initHashMap(8);
         loadHashMapFromJson(hashMap, "musicas.json");
 
@@ -475,7 +476,7 @@ void* handle_client(void* arg) {
 
         printf("Mensagem recebida do cliente: %s\n", buffer);
 
-
+        // checagem das operacoes validas
         if (strcmp(buffer, "1") == 0) {
             memset(buffer, 0, sizeof(buffer));
             createMusica(clientSocket, hashMap);
@@ -490,6 +491,7 @@ void* handle_client(void* arg) {
             recv(clientSocket, buffer, sizeof(buffer), 0);
             int musicaID = atoi(buffer);
             deleteMusica(hashMap, musicaID, clientSocket);
+            send(clientSocket, buffer, strlen(buffer), 0);
         } else if (strcmp(buffer, "4") == 0) {
             sendMessage(clientSocket, "Digite o ano:");
             memset(buffer, 0, sizeof(buffer));
@@ -522,6 +524,7 @@ void* handle_client(void* arg) {
 }
 
 int main() {
+    // inicializacao do server
     int serverSocket;
     struct sockaddr_in serverAddr;
     struct sockaddr_in newAddr;
@@ -530,7 +533,7 @@ int main() {
 
     signal(SIGINT, signal_handler);
 
-
+    // criacao do server
     serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (serverSocket < 0) {
         perror("Erro na criação do socket");
@@ -549,7 +552,7 @@ int main() {
     serverAddr.sin_port = htons(PORT);
     serverAddr.sin_addr.s_addr = INADDR_ANY;
 
-
+    // associassao do ocket
     if (bind(serverSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
         perror("Erro ao associar o socket");
         exit(EXIT_FAILURE);
@@ -563,7 +566,7 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-
+    // loop de conecao com os clientes
     while (1) {
         addr_size = sizeof(newAddr);
         int* clientSocket = malloc(sizeof(int));

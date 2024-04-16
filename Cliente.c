@@ -54,9 +54,14 @@ int main(){
 	printf("Digite:\n1 para inserir uma música\n2 para listar as músicas\n3 para deletar uma musica pelo ID\n4 para listar as musicas de um ano\n5 para listar as musicas em um idioma em um ano\n6 para listar as musicas de um tipo\n7 para listar as musicas por ID\n");
 
 	// Looping que ira manter o client conectado enviando e recebendo informacoes
+	int c;
+	while((c = getchar()) != '\n' && c != EOF) { }
 	while(1){
+
+
 		printf("Cliente:");
-		scanf("%s", &buffer[0]);
+		fgets(buffer, sizeof(buffer), stdin);
+		buffer[strcspn(buffer, "\n")] = 0;
 		send(clientSocket, buffer, strlen(buffer), 0);
 		memset(buffer, 0, sizeof(buffer));
 
