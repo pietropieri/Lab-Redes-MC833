@@ -454,59 +454,60 @@ void deleteMusica(HashMap* hashMap, int musicaID, int clientSocket) {
 void* handle_client(void* arg) {
     int clientSocket = *(int*)arg;
     char buffer[1024];
-    
-    // Inicialize a HashMap
 
-    
-    // Lógica para lidar com o cliente
+
+
+
     while (1) {
-        HashMap* hashMap = initHashMap(8); // Tamanho da HashMap, ajuste conforme necessário
+        HashMap* hashMap = initHashMap(8);
         loadHashMapFromJson(hashMap, "musicas.json");
-        // Limpa o buffer
+
         memset(buffer, 0, sizeof(buffer));
 
-        // Recebe a mensagem do cliente
-        recv(clientSocket, buffer, sizeof(buffer), 0);
+        ssize_t recv_bytes = recv(clientSocket, buffer, sizeof(buffer), 0);
+        if (recv_bytes == 0) {
+            printf("Cliente encerrou a conexão\n");
+            break;
+        } else if (recv_bytes < 0) {
+            perror("Erro ao receber mensagem do cliente");
+            break;
+        }
+
         printf("Mensagem recebida do cliente: %s\n", buffer);
-        sleep(2);
-        
+
+
         if (strcmp(buffer, "1") == 0) {
             memset(buffer, 0, sizeof(buffer));
             createMusica(clientSocket, hashMap);
-        } else if (strcmp(buffer, "2") == 0) { // Exibe informacoes de musicas registradas
+        } else if (strcmp(buffer, "2") == 0) {
             memset(buffer, 0, sizeof(buffer));
             printHashMap(clientSocket, hashMap);
-        } else if (strcmp(buffer, "3") == 0) { // Deleta musica existente
+        } else if (strcmp(buffer, "3") == 0) {
             memset(buffer, 0, sizeof(buffer));
-            strcpy(buffer, "===== DELETANDO MUSICA, DIGITE O ID: =====:\n");
+            strcpy(buffer, "===== DELETANDO MÚSICA, DIGITE O ID: =====\n");
             send(clientSocket, buffer, strlen(buffer), 0);
             memset(buffer, 0, sizeof(buffer));
-            recv(clientSocket, buffer, 1024, 0);
+            recv(clientSocket, buffer, sizeof(buffer), 0);
             int musicaID = atoi(buffer);
-            printf("%d", musicaID);
             deleteMusica(hashMap, musicaID, clientSocket);
-            send(clientSocket, buffer, strlen(buffer), 0);
-        } else if (strcmp(buffer, "4") == 0) {  // Lista musicas por ano
+        } else if (strcmp(buffer, "4") == 0) {
             sendMessage(clientSocket, "Digite o ano:");
             memset(buffer, 0, sizeof(buffer));
             listarMusicasPorAno(clientSocket, hashMap);
-        } else if (strcmp(buffer, "5") == 0) {   // Lista musicas por Idioma e Ano
-            char idiomaBuffer[200];
-            char anoBuffer[200];
+        } else if (strcmp(buffer, "5") == 0) {
+            char idioma[1024];
+            char ano[1024];
             sendMessage(clientSocket, "Digite o idioma:");
-            memset(idiomaBuffer, 0, sizeof(idiomaBuffer));
-            recv(clientSocket, idiomaBuffer, sizeof(idiomaBuffer), 0);
+            recv(clientSocket, idioma, sizeof(idioma), 0);
             sendMessage(clientSocket, "Digite o ano:");
-            memset(anoBuffer, 0, sizeof(anoBuffer));
-            recv(clientSocket, anoBuffer, sizeof(anoBuffer), 0);
-            listarMusicasPorIdiomaEAno(clientSocket, hashMap, idiomaBuffer, anoBuffer);
-        } else if (strcmp(buffer, "6") == 0) {  // Lista musicas por Tipo
+            recv(clientSocket, ano, sizeof(ano), 0);
+            listarMusicasPorIdiomaEAno(clientSocket, hashMap, idioma, ano);
+        } else if (strcmp(buffer, "6") == 0) {
             sendMessage(clientSocket, "Digite o tipo:");
-            memset(buffer, 0, sizeof(buffer));
             listarMusicasPorTipo(clientSocket, hashMap);
-        } else if (strcmp(buffer, "7") == 0) {  // Lista musicas por ID
+        } else if (strcmp(buffer, "7") == 0) {
             memset(buffer, 0, sizeof(buffer));
-            listarInformacoesMusicaPorID(clientSocket, hashMap);  
+            listarInformacoesMusicaPorID(clientSocket, hashMap);
         } else {
             memset(buffer, 0, sizeof(buffer));
             sendMessage(clientSocket, "Comando inválido!");
@@ -527,10 +528,9 @@ int main() {
     socklen_t addr_size;
     int opt = 1;
 
-    // Configuração de sinal SIGINT (CTRL+C)
     signal(SIGINT, signal_handler);
 
-    // Inicialize o socket do servidor
+
     serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (serverSocket < 0) {
         perror("Erro na criação do socket");
@@ -538,26 +538,24 @@ int main() {
     }
     printf("[+]Socket do servidor criado.\n");
 
-    // Configurações do socket
+
     if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
         perror("Erro ao definir as opções do socket");
         exit(EXIT_FAILURE);
     }
 
-    // Configurações do endereço do servidor
     memset(&serverAddr, '\0', sizeof(serverAddr));
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(PORT);
     serverAddr.sin_addr.s_addr = INADDR_ANY;
 
-    // Associa o socket ao endereço e à porta
+
     if (bind(serverSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
         perror("Erro ao associar o socket");
         exit(EXIT_FAILURE);
     }
     printf("[+]Socket associado à porta %d\n", PORT);
 
-    // Ouve até 10 conexões pendentes
     if (listen(serverSocket, 10) == 0) {
         printf("[+]Servidor ouvindo por conexões...\n");
     } else {
@@ -565,25 +563,22 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    // Aceita conexões dos clientes
+
     while (1) {
         addr_size = sizeof(newAddr);
-        int* clientSocket = malloc(sizeof(int));  // Aloca memória para o socket do cliente
+        int* clientSocket = malloc(sizeof(int));
         *clientSocket = accept(serverSocket, (struct sockaddr*)&newAddr, &addr_size);
         if (*clientSocket < 0) {
             perror("Erro ao aceitar a conexão");
-            free(clientSocket);  // Libera a memória alocada
+            free(clientSocket);
             continue;
         }
         printf("[+]Conexão aceita de %s:%d\n", inet_ntoa(newAddr.sin_addr), ntohs(newAddr.sin_port));
 
-        // Crie uma nova thread para lidar com o cliente
         pthread_t thread_id;
         pthread_create(&thread_id, NULL, handle_client, clientSocket);
-        // A nova thread lidará com o cliente
     }
 
-    // Fecha o socket do servidor (em caso de saída do loop)
     close(serverSocket);
 
     return 0;
